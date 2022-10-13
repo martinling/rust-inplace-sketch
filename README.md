@@ -89,10 +89,10 @@ However, an `inplace T` is not simply sugar for a closure that returns a value:
 it carries with it the guarantee that the value will be constructed in place
 where it is required.
 
-This is the main difference between this proposal and the 'placement by return'
-RFC [2884](https://github.com/rust-lang/rfcs/pull/2884), which sought to
-guarantee inplace initialization of return values under certain conditions. A
-key shortcoming of that approach was that its effect was implicit: it required
+This is the main difference between this proposal and the [placement by return
+RFC](https://github.com/rust-lang/rfcs/pull/2884), which sought to guarantee
+inplace initialization of return values under certain conditions. A key
+shortcoming of that approach was that its effect was implicit: it required
 understanding complex rules to know when inplace construction could be
 guaranteed, and it was hard to know when the compiler should warn about it not
 happening.
@@ -200,19 +200,19 @@ compatibility for code that needs to support both inplace and non-inplace
 values.
 
 In C++, the introduction of `placement new` required e.g. adding a new
-`emplace_back` method to std::vector alongside the existing `push_back` method,
-causing API churn for code that wanted to take advantage of in-place
+`emplace_back` method to `std::vector` alongside the existing `push_back`
+method, causing API churn for code that wanted to take advantage of in-place
 construction.
 
 With this proposal there is no need for Rust to do the same. For instance,
-Vec::push can be rewritten to have the signature:
+`Vec::push` can be rewritten to have the signature:
 
 ```rust
 pub fn push(&mut self, value: ?inplace T);
 ```
 
-The new version can remain compatible with all existing callers, as it can be
-monomorphized into two implementations; one equivalent to the current function
+The new version remains compatible with all existing callers. It can be
+monomorphized into two implementations: one equivalent to the current function
 that accepts `T`, and one that accepts `inplace T` via a new ABI.
 
 ## Example
