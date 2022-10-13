@@ -227,15 +227,14 @@ allocation, insertion might look like:
 
 ```rust
 struct DstArray<T> {
-    pointers: Vec<*mut u8>,
-    _phantom: PhantomData<T>,
+    pointers: Vec<*mut T>,
 }
 
 impl<T> DstArray<T> where T: ?Sized {
     pub fn append(&mut self, value: ?inplace T) -> bool {
         let layout = Layout::from_maybe_inplace_value(&value);
         unsafe {
-            let pointer = System.alloc(layout);
+            let pointer = System.alloc(layout)::cast<T>();
             if pointer.is_null() {
                 return false;
             }
