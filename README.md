@@ -2,8 +2,8 @@
 
 ## Summary 
 
-A new `inplace` keyword denotes a value that will be initialized in place at
-its final location, rather than constructed on the stack and copied into place.
+A new `inplace` keyword denotes a value or type that will be initialized in
+place at a location.
 
 It can be used as both an expression modifier and as a type modifier:
 
@@ -21,8 +21,8 @@ created in place where it is needed.
 
 Expressions and blocks of type `T` can be converted to `inplace T` at compile
 time from safe code, resulting in an internal initializer created by the
-compiler. At runtime, `inplace T` can be converted to `T`, invoking the
-initializer with the destination.
+compiler. An `inplace T` can be converted to `T`, invoking the initializer with
+the destination.
 
 We also define the type `?inplace T` as a way to accept either a `T` or
 `inplace T`, and update existing APIs in the standard library to use this type,
@@ -34,7 +34,7 @@ impl<T> Vec<T> {
 }
 ```
 
-By altering function signatures to accept this dual type, support for inplace
+By altering function signatures to accept this dual type, support for in-place
 initialization can be added to existing APIs, whilst maintaining backwards
 compatibility with existing code and avoiding API churn.
 
@@ -62,7 +62,7 @@ There are two rules for conversion between `inplace T` and `T`:
 
 2. An expression of type `T` can be converted to `inplace T` at compile time,
    if the compiler can see how to safely construct the result of that
-   expression inplace where later used.
+   expression in-place where later used.
 
 Thus, writing a function that returns `inplace T` does not require any special
 syntax or style, only a suitable expression of type `T`:
@@ -80,7 +80,7 @@ initializer which will populate the value at a later time when the destination
 is known. The `create_foo` function returns what is essentially a handle for
 the potential value.
 
-An `inplace T` must contain everything needed to construct the `T` value. In
+An `inplace T` must capture everything needed to construct the `T` value. In
 the example above, the effect is similar to if `create_foo` returned a closure
 to be evaluated later:
 
@@ -164,9 +164,28 @@ configuration where a panic results in an abort.
 
 ## Composition
 
-Consider the function below:
+Obviously, there is little gain to constructing a structure in place if all of
+its fields must first be created separately, then captured in a pseudo-closure
+to be moved into place later.
+
+We apply a rule that when an `inplace T` value is used as a field in another
+`inplace` structure, its initialization is deferred with the initialization of
+the outer structure. In other words, inplace expressions can be nested and
+their initializers will be executed together. Thus, complex structures can be
+constructed in place by composition of their parts.
+
+Consider the example below:
 
 ```rust
+
+struct Bar {
+    baz: Baz,
+    quux: Quux,
+}
+
+fn create_baz() -> Result<inplace Baz, Error>;
+fn create_quux() -> Result<inplace Quux, Error>;
+
 fn create_bar() -> Result<inplace Bar, Error> {
     Ok(Bar {
         baz: create_baz()?,
@@ -175,28 +194,9 @@ fn create_bar() -> Result<inplace Bar, Error> {
 }
 ```
 
-In this example, the calls to `create_baz()` and `create_quux()` are executed
-before `create_bar` function returns, along with the construction of the
-Result. Only the final construction of the `struct Bar`, with the captured
-return values of the two helper functions, is deferred.
-
-Obviously, there is little gain to constructing a structure in place if all of
-its fields must first be created separately, then captured in a pseudo-closure
-to be moved into place later.
-
-We can ensure that the above example is fully constructed in place by having
-the helpers it uses themselves return `inplace` results:
-
-```rust
-fn create_baz() -> Result<inplace Baz, Error>;
-fn create_quux() -> Result<inplace Quux, Error>;
-```
-
-We apply a rule that when an `inplace T` value is used as a field in another
-`inplace` structure, its initialization is deferred to the initialization of
-the outer structure. In other words, inplace expressions can be nested and
-their initializers will be executed together. Thus, complex structures can be
-constructed in place by composition of their parts.
+The `create_bar` function runs all the error checks, and returns either an
+`Error`, or an inplace Bar` which can be used to later initialize the `struct
+Bar` in place, composing the effects of its component initializers.
 
 ## Optionally inplace types
 
@@ -204,7 +204,7 @@ The `?inplace T` dual type allows for interoperability and backwards
 compatibility for code that needs to support both inplace and non-inplace
 values.
 
-In C++, the introduction of "placement `new`" required e.g. adding a new
+In C++, the introduction of _placement new_ required e.g. adding a new
 `emplace_back` method to `std::vector` alongside the existing `push_back`
 method, causing API churn for code that wanted to take advantage of in-place
 construction.
@@ -295,7 +295,7 @@ support for fallible initialization.
 
 In principle, it might be straightforward to adapt this proposal such that
 rather than just `inplace T` we have for instance a magic trait `Inplace<T, E>`
-in which E is an error type that may be potentially returned by the
+in which `E` is an error type that may be potentially returned by the
 initializer.
 
 However, since there is no way for an assignment to result in an error, the
@@ -318,7 +318,7 @@ With the ability to require that structures be created in place, it becomes
 possible in combination with pinning for self-referential structures to be
 created safely. Doing so would require some new syntactic means of
 self-reference, as well as changes to the borrow checker if self-references
-rarther than just self-pointers are to be used.
+rather than just self-pointers are to be used.
 
 Here, we hypothesise reusing the `inplace` keyword to refer to the eventual
 destination of an inplace expression, but other syntax choices could be used:
