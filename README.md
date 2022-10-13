@@ -195,7 +195,7 @@ fn create_bar() -> Result<inplace Bar, Error> {
 ```
 
 The `create_bar` function runs all the error checks, and returns either an
-`Error`, or an inplace Bar` which can be used to later initialize the `struct
+`Error`, or an `inplace Bar` which can be used to later initialize the `struct
 Bar` in place, composing the effects of its component initializers.
 
 ## Optionally inplace types
