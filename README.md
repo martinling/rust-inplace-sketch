@@ -38,7 +38,7 @@ By altering function signatures to accept this dual type, support for inplace
 initialization can be added to existing APIs, whilst maintaining backwards
 compatibility with existing code and avoiding API churn.
 
-An `inplace T` or `?inplace T` can be queried for its Layout, using new
+An `inplace T` or `?inplace T` can also be queried for its `Layout`, using new
 functions added to `alloc::Layout`:
 
 ```rust
@@ -204,7 +204,7 @@ The `?inplace T` dual type allows for interoperability and backwards
 compatibility for code that needs to support both inplace and non-inplace
 values.
 
-In C++, the introduction of `placement new` required e.g. adding a new
+In C++, the introduction of "placement `new`" required e.g. adding a new
 `emplace_back` method to `std::vector` alongside the existing `push_back`
 method, causing API churn for code that wanted to take advantage of in-place
 construction.
@@ -247,12 +247,12 @@ impl<T> DstArray<T> where T: ?Sized {
 }
 ```
 
-When the function is monomorphized for `T`, the Layout call fetches the layout
-of the already initialized value on the stack. The function allocates a new
-location on the heap, and the pointer assignment results in the value being
+When the function is monomorphized for `T`, the `Layout` call fetches the
+layout of the already initialized value on the stack. The function allocates a
+new location on the heap, and the pointer assignment results in the value being
 copied from the stacked argument value to the heap.
 
-When monomorphized for `inplace T`, the Layout call retrieves the expected
+When monomorphized for `inplace T`, the `Layout` call retrieves the expected
 layout for the potential value. The function allocates a location on the heap
 of the correct size. The pointer assignment requires a conversion from `inplace
 T` to `T`, so the initializer is called to construct the value in-place in the
