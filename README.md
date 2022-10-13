@@ -233,8 +233,9 @@ struct DstArray<T> {
 impl<T> DstArray<T> where T: ?Sized {
     pub fn append(&mut self, value: ?inplace T) -> bool {
         let layout = Layout::from_maybe_inplace_value(&value);
+        let pointer: *mut T;
         unsafe {
-            let pointer = System.alloc(layout)::cast<T>();
+            pointer = System.alloc(layout)::cast<T>();
             if pointer.is_null() {
                 return false;
             }
