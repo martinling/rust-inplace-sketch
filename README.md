@@ -19,6 +19,11 @@ An `inplace T` represents a potential value. It can be thought of like a
 closure that returns a `T`, but with a guarantee that the `T` value will be
 created in place where it is needed.
 
+Expressions and blocks of type `T` can be converted to `inplace T` at compile
+time from safe code, resulting in an internal initializer created by the
+compiler. At runtime, `inplace T` can be converted to `T`, invoking the
+initializer with the destination.
+
 We also define the type `?inplace T` as a way to accept either a `T` or
 `inplace T`, and update existing APIs in the standard library to use this type,
 e.g:
